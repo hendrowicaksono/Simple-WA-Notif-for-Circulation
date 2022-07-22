@@ -9,6 +9,7 @@
 - Download this plugin and put in SLiMS plugins directory.
     - You can download this repo, and do the "composer update".
     - Or you can use the build package from [release page](https://github.com/hendrowicaksono/Simple-WA-Notif-for-Circulation/releases/tag/1.0).
+- Go into the folder, edit `circ_notif_bywa.plugin.php` file, update line: `$ccnw['device_id'] = 'put_your_device_id_here';`, change `put_your_device_id_here` text with your [Whacenter](https://whacenter.com/) device id.
 - Activate the plugin: `System` -> `Plugin` -> `Simple Circulation Notification using Whatsapp`.
 - Now try the circulation process. If anything is going well, then the user who borrows or returns the library collection will get notification via Whatsapp. BUT DONT FORGET, make sure the Phone number is membership data is filled with member's whatsapp number.
 
