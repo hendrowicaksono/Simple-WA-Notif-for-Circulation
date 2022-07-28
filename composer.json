@@ -1,5 +1,13 @@
 {
+    "autoload": {
+        "psr-0": {
+            "Cncw": "src/"
+        }
+    },
     "require": {
-        "guzzlehttp/guzzle": "^7.4"
+        "guzzlehttp/guzzle": "^7.4",
+        "doctrine/dbal": "^3.3",
+        "vlucas/valitron": "^1.4",
+        "yidas/pagination": "^1.0"
     }
 }

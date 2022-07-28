@@ -8,18 +8,32 @@
  * Author URI: https://github.com/hendrowicaksono
  */
 
+defined('INDEX_AUTH') OR die('Direct access not allowed!');
+
 use SLiMS\DB;
 use SLiMS\Plugins;
 
+// IP based access limitation
+require LIB . 'ip_based_access.inc.php';
+do_checkIP('smc');
+do_checkIP('smc-circulation');
+
+// privileges checking
+$can_read = utility::havePrivilege('circulation', 'r');
+
 require 'vendor/autoload.php';
+require 'bootstrap.php';
 
 $ccnw = array ();
-$ccnw['library_name'] = 'Perpustakaan Ideal Serbaguna';
-$ccnw['device_id'] = 'put_your_device_id_here';
-$ccnw['footer_text'] = 'Harap simpan resi ini sebagai bukti transaksi.';
+$ccnw['conn'] = $conn;
+$ccnw['library_name'] = $library_name;
+$ccnw['device_id'] = $device_id;
+$ccnw['footer_text'] = $footer_text;
 
 // get plugin instance
 $plugin = \SLiMS\Plugins::getInstance();
+
+$plugin->registerMenu('circulation', __('WA Notif Log'), __DIR__ . '/index.php');
 
 // registering menus or hook
 $plugin->register("circulation_after_successful_transaction", function($data) use (&$ccnw) {
@@ -28,7 +42,7 @@ $plugin->register("circulation_after_successful_transaction", function($data) us
         # Getting member data to get member_phone info.
         $member_data = api::member_load(DB::getInstance('mysqli'), $data['memberID']);
         # Tambahkan validasi member_phone disini jika dibutuhkan. Kalau nomer
-        #tidak ada atau tidak valid, tidak usah diproses.
+        # tidak ada atau tidak valid, tidak usah diproses.
         if (isset($member_data[0]['member_phone'])) {
 
             # HEADER
@@ -103,19 +117,29 @@ $plugin->register("circulation_after_successful_transaction", function($data) us
 
             # FOOTER
             $message .= "\n_____________________\n".$ccnw['footer_text'];
-        
+
+            # Simpan log ke database
+            #$query = DB::getInstance()->prepare("INSERT INTO circ_notif_wa_log (member_id, member_name, member_type, transaction_date, transaction_id, message, created_at) 
+            #VALUES (:member_id, :member_name, :member_type, :transaction_date, :transaction_id, :message, :created_at)");
+            $query = $ccnw['conn']->prepare("INSERT INTO circ_notif_wa_log (member_id, member_name, member_type, member_phone, transaction_date, transaction_id, message, created_at) 
+            VALUES (:member_id, :member_name, :member_type, :member_phone, :transaction_date, :transaction_id, :message, :created_at)");
+            $query->bindValue(':member_id', $data['memberID'], PDO::PARAM_STR);
+            $query->bindValue(':member_name', $data['memberName'], PDO::PARAM_STR);
+            $query->bindValue(':member_type', $data['memberType'], PDO::PARAM_STR);
+            $query->bindValue(':member_phone', $member_data[0]['member_phone'], PDO::PARAM_STR);
+            $query->bindValue(':transaction_date', $data['date']);
+            $query->bindValue(':transaction_id', $messageId, PDO::PARAM_STR);
+            $query->bindValue(':message', $message);
+            $query->bindValue(':created_at', date('Y-m-d H:i:s'));
+            $query->execute();
+
             # informasi kredensial whacenter
             $data = array (
                 'device_id' => $ccnw['device_id'],
                 'number' => $member_data[0]['member_phone'],
                 'message' => $message
             );
-            # kirim request
-            $client = new \GuzzleHttp\Client();
-            $response = $client->request('POST', 'https://app.whacenter.com/api/send', [
-                'form_params' => $data
-            ]);
-
+            \Cncw\Notification::sendToWhacenter($data);
         }
     }
 });
