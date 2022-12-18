@@ -60,8 +60,5 @@ class CreateCircNotifWaLogTable extends \SLiMS\Migration\Migration
     function down()
     {
         Schema::drop('circ_notif_wa_log');
-        \SLiMS\DB::getInstance()->query("
-            DROP TABLE circ_notif_wa_log
-        ");
     }
 }
