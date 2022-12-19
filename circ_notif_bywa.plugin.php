@@ -43,7 +43,9 @@ $plugin->register("circulation_after_successful_transaction", function($data) us
         $member_data = api::member_load(DB::getInstance('mysqli'), $data['memberID']);
         # Tambahkan validasi member_phone disini jika dibutuhkan. Kalau nomer
         # tidak ada atau tidak valid, tidak usah diproses.
-        if (isset($member_data[0]['member_phone'])) {
+        $member_phone = new Valitron\Validator($member_data[0]);
+        $member_phone->rule('required', ['member_phone']);
+        if($member_phone->validate()) {
 
             # HEADER
             $message = '*'.strtoupper($ccnw['library_name'])."*\n";
